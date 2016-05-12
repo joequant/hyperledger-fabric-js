@@ -64,7 +64,7 @@ ibc.prototype.load = function(options, cb){
 	if(!options.chaincode || !options.chaincode.unzip_dir) errors.push('the option "chaincode.unzip_dir" is required');
 	if(!options.chaincode || !options.chaincode.git_url) errors.push('the option "chaincode.git_url" is required');
 	if(errors.length > 0){															//check for input errors
-		logger.error('! [ibc-js] Input Error - ibc.load()', errors);
+		logger.error('! [hyperledger-fabric-js] Input Error - ibc.load()', errors);
 		if(cb) cb(helper.eFmt('load() input error', 400, errors));
 		return;																		//get out of dodge
 	}
@@ -119,7 +119,7 @@ ibc.prototype.load = function(options, cb){
 	}
 	else{
 		ibc.chaincode.details.users = [];
-		logger.log('[ibc-js] No membership users found after filtering, assuming this is a network w/o membership');
+		logger.log('[hyperledger-fabric-js] No membership users found after filtering, assuming this is a network w/o membership');
 		load_cc();
 	}
 
@@ -151,7 +151,7 @@ ibc.prototype.load_chaincode = function(options, cb) {
 	if(!options.unzip_dir) errors.push('the option "unzip_dir" is required');
 	if(!options.git_url) errors.push('the option "git_url" is required');
 	if(errors.length > 0){																//check for input errors
-		logger.error('! [ibc-js] Input Error - ibc.load_chaincode()', errors);
+		logger.error('! [hyperledger-fabric-js] Input Error - ibc.load_chaincode()', errors);
 		if(cb) cb(helper.eFmt('load_chaincode() input error', 400, errors));
 		return;																			//get out of dodge
 	}
@@ -183,7 +183,7 @@ ibc.prototype.load_chaincode = function(options, cb) {
 				download_it(options.zip_url);											//nope, go download it
 			}
 			else{
-				logger.log('[ibc-js] Found chaincode in local file system');
+				logger.log('[hyperledger-fabric-js] Found chaincode in local file system');
 				fs.readdir(unzip_cc_dest, cb_got_names);								//yeppers, go use it
 			}
 		}
@@ -191,7 +191,7 @@ ibc.prototype.load_chaincode = function(options, cb) {
 
 	// Step 0.
 	function download_it(download_url){
-		logger.log('[ibc-js] Downloading zip');
+		logger.log('[hyperledger-fabric-js] Downloading zip');
 		var file = fs.createWriteStream(zip_dest);
 		https.get(download_url, function(response) {
 			response.pipe(file);
@@ -206,7 +206,7 @@ ibc.prototype.load_chaincode = function(options, cb) {
 				}
 			});
 		}).on('error', function(err) {
-			logger.error('! [ibc-js] Download error');
+			logger.error('! [hyperledger-fabric-js] Download error');
 			fs.unlink(zip_dest); 														//delete the file async
 			if (cb) cb(helper.eFmt('doad_chaincode() download error', 500, err.message), ibc.chaincode);
 		});
@@ -214,7 +214,7 @@ ibc.prototype.load_chaincode = function(options, cb) {
 
 	// Step 1.
 	function cb_downloaded(){
-		logger.log('[ibc-js] Unzipping zip');
+		logger.log('[hyperledger-fabric-js] Unzipping zip');
 		try{
 			var zip = new AdmZip(zip_dest);
 			zip.extractAllTo(unzip_dest, /*overwrite*/true);
@@ -222,16 +222,16 @@ ibc.prototype.load_chaincode = function(options, cb) {
 		catch (err){
 			return cb(helper.eFmt('download repo error', 400, err), null);
 		}
-		logger.log('[ibc-js] Unzip done');
+		logger.log('[hyperledger-fabric-js] Unzip done');
 		fs.readdir(unzip_cc_dest, cb_got_names);
 		fs.unlink(zip_dest, function(err) {});											//remove zip file, never used again
 	}
 
 	// Step 2.
 	function cb_got_names(err, obj){
-		logger.log('[ibc-js] Scanning files', obj);
+		logger.log('[hyperledger-fabric-js] Scanning files', obj);
 		var foundGo = false;
-		if(err != null) logger.log('! [ibc-js] fs readdir Error', err);
+		if(err != null) logger.log('! [hyperledger-fabric-js] fs readdir Error', err);
 		else{
 			for(var i in obj){
 				if(obj[i].indexOf('.go') >= 0){											//look for GoLang files
@@ -255,23 +255,23 @@ ibc.prototype.load_chaincode = function(options, cb) {
 		var msg = '';
 		if(!foundGo){																	//error no go files
 			msg = 'did not find any *.go files, cannot continue';
-			logger.error('! [ibc-js] Error - ', msg);
+			logger.error('! [hyperledger-fabric-js] Error - ', msg);
 			if(cb) return cb(helper.eFmt('load_chaincode() no chaincode', 400, msg), null);
 		}
 		else{
 			
 			if(!found_invoke){															//warning no run/invoke functions
-				logger.wartn('! [ibc-js] Warning - did not find any invoke functions in chaincode\'s "Invoke()", building a generic "invoke"');
+				logger.wartn('! [hyperledger-fabric-js] Warning - did not find any invoke functions in chaincode\'s "Invoke()", building a generic "invoke"');
 				build_invoke_func('invoke');											//this will make chaincode.invoke.invokce(args)
 			}
 			
 			if(!found_query){															//warning no query functions
-				logger.warn('! [ibc-js] Warning - did not find any query functions in chaincode\'s "Query()", building a generic "query"');
+				logger.warn('! [hyperledger-fabric-js] Warning - did not find any query functions in chaincode\'s "Query()", building a generic "query"');
 				build_query_func('query');												//this will make chaincode.query.query(args)
 			}
 
 			// Step 3.																	success!
-			logger.log('[ibc-js] load_chaincode() finished');
+			logger.log('[hyperledger-fabric-js] load_chaincode() finished');
 			ibc.chaincode.details.timestamp = Date.now();
 			ibc.chaincode.deploy = deploy;
 			if(cb) return cb(null, ibc.chaincode);										//all done, send it to callback
@@ -281,14 +281,14 @@ ibc.prototype.load_chaincode = function(options, cb) {
 	//regex to find the shim version for this chaincode
 	function find_shim(file){
 		var ret = '';
-		if(file == null) logger.error('! [ibc-js] fs readfile Error');
+		if(file == null) logger.error('! [hyperledger-fabric-js] fs readfile Error');
 		else{
-			logger.log('[ibc-js] Parsing file for shim version');
+			logger.log('[hyperledger-fabric-js] Parsing file for shim version');
 			
 			var shim_regex = /github.com\/\S+\/shim/g;					//find chaincode's shim version
 			var result = file.match(shim_regex);
 			if(result[0]){
-				logger.log('[ibc-js] Found shim version:', result[0]);
+				logger.log('[hyperledger-fabric-js] Found shim version:', result[0]);
 				ret = result[0];
 			}
 		}
@@ -297,9 +297,9 @@ ibc.prototype.load_chaincode = function(options, cb) {
 
 	//look for Invokes
 	function parse_for_invoke(name, str){
-		if(str == null) logger.error('! [ibc-js] fs readfile Error');
+		if(str == null) logger.error('! [hyperledger-fabric-js] fs readfile Error');
 		else{
-			logger.log('[ibc-js] Parsing file for invoke functions -', name);
+			logger.log('[hyperledger-fabric-js] Parsing file for invoke functions -', name);
 			
 			// Step 2a.
 			var go_func_regex = /func\s+\(\w+\s+\*SimpleChaincode\)\s+(\w+)/g;			//find chaincode's go lang functions
@@ -347,9 +347,9 @@ ibc.prototype.load_chaincode = function(options, cb) {
 	
 	//look for Queries
 	function parse_for_query(name, str){
-		if(str == null) logger.error('! [ibc-js] fs readfile Error');
+		if(str == null) logger.error('! [hyperledger-fabric-js] fs readfile Error');
 		else{
-			logger.log('[ibc-js] Parsing file for query functions -', name);
+			logger.log('[hyperledger-fabric-js] Parsing file for query functions -', name);
 			
 			// Step 2e.
 			var q_start = 0;
@@ -386,9 +386,9 @@ ibc.prototype.load_chaincode = function(options, cb) {
 	
 	//look for Inits
 	function parse_for_init(name, str){
-		if(str == null) logger.error('! [ibc-js] fs readfile Error');
+		if(str == null) logger.error('! [hyperledger-fabric-js] fs readfile Error');
 		else{
-			//logger.log('[ibc-js] Parsing file for init functions -', name);
+			//logger.log('[hyperledger-fabric-js] Parsing file for init functions -', name);
 			
 			// Step 2h.
 			var q_start = 0;
@@ -449,7 +449,7 @@ ibc.prototype.network = function(arrayPeers, options){
 	}
 
 	if(errors.length > 0){																//check for input errors
-		logger.error('! [ibc-js] Input Error - ibc.network()', errors);
+		logger.error('! [hyperledger-fabric-js] Input Error - ibc.network()', errors);
 	}
 	else{
 		ibc.chaincode.details.peers = [];
@@ -467,7 +467,7 @@ ibc.prototype.network = function(arrayPeers, options){
 				temp.name = arrayPeers[i].id.substring(pos) + '-' + arrayPeers[i].id.substring(0, 12) + '...:' + arrayPeers[i].api_port;
 			}
 	
-			logger.log('[ibc-js] Peer: ', temp.name);									//print the friendly name
+			logger.log('[hyperledger-fabric-js] Peer: ', temp.name);									//print the friendly name
 			ibc.chaincode.details.peers.push(temp);
 		}
 
@@ -523,7 +523,7 @@ ibc.prototype.save =  function(dir, cb){
 	var errors = [];
 	if(!dir) errors.push('the option "dir" is required');
 	if(errors.length > 0){																//check for input errors
-		logger.error('[ibc-js] Input Error - ibc.save()', errors);
+		logger.error('[hyperledger-fabric-js] Input Error - ibc.save()', errors);
 		if(cb) cb(helper.eFmt('save() input error', 400, errors));
 	}
 	else{
@@ -532,7 +532,7 @@ ibc.prototype.save =  function(dir, cb){
 		var dest = path.join(dir, fn);
 		fs.writeFile(dest, JSON.stringify({details: ibc.chaincode.details}), function(e){
 			if(e != null){
-				logger.error('[ibc-js] ibc.save() error', e);
+				logger.error('[hyperledger-fabric-js] ibc.save() error', e);
 				if(cb) cb(helper.eFmt('save() fs write error', 500, e), null);
 			}
 			else {
@@ -547,7 +547,7 @@ ibc.prototype.save =  function(dir, cb){
 // EXTERNAL - clear() - clear the temp directory
 // ============================================================================================================================
 ibc.prototype.clear =  function(cb){
-	logger.log('[ibc-js] removing temp dir');
+	logger.log('[hyperledger-fabric-js] removing temp dir');
 	helper.removeThing(tempDirectory, cb);											//remove everything in this directory
 };
 
@@ -558,11 +558,11 @@ ibc.prototype.chain_stats =  function(cb){
 	var options = {path: '/chain'};													//very simple API, get chainstats!
 
 	options.success = function(statusCode, data){
-		logger.log('[ibc-js] Chain Stats - success');
+		logger.log('[hyperledger-fabric-js] Chain Stats - success');
 		if(cb) cb(null, data);
 	};
 	options.failure = function(statusCode, e){
-		logger.error('[ibc-js] Chain Stats - failure:', statusCode, e);
+		logger.error('[hyperledger-fabric-js] Chain Stats - failure:', statusCode, e);
 		if(cb) cb(helper.eFmt('chain_stats() error', statusCode, e), null);
 	};
 	rest.get(options, '');
@@ -574,11 +574,11 @@ ibc.prototype.chain_stats =  function(cb){
 ibc.prototype.block_stats =  function(id, cb){
 	var options = {path: '/chain/blocks/' + id};									//i think block IDs start at 0, height starts at 1, fyi
 	options.success = function(statusCode, data){
-		logger.log('[ibc-js] Block Stats - success');
+		logger.log('[hyperledger-fabric-js] Block Stats - success');
 		if(cb) cb(null, data);
 	};
 	options.failure = function(statusCode, e){
-		logger.error('[ibc-js] Block Stats - failure:', statusCode);
+		logger.error('[hyperledger-fabric-js] Block Stats - failure:', statusCode);
 		if(cb) cb(helper.eFmt('block_stats() error', statusCode, e), null);
 	};
 	rest.get(options, '');
@@ -614,11 +614,11 @@ function read(args, enrollId, cb){
 				};
 	//logger.log('body', body);
 	options.success = function(statusCode, data){
-		logger.log('[ibc-js] Read - success:', data);
+		logger.log('[hyperledger-fabric-js] Read - success:', data);
 		if(cb) cb(null, data.OK);
 	};
 	options.failure = function(statusCode, e){
-		logger.error('[ibc-js] Read - failure:', statusCode);
+		logger.error('[hyperledger-fabric-js] Read - failure:', statusCode);
 		if(cb) cb(helper.eFmt('read() error', statusCode, e), null);
 	};
 	rest.post(options, '', body);
@@ -632,7 +632,7 @@ ibc.prototype.register = function(index, enrollID, enrollSecret, maxRetry, cb) {
 };
 
 function register(index, enrollID, enrollSecret, maxRetry, attempt, cb){
-	logger.log('[ibc-js] Registering ', ibc.chaincode.details.peers[index].name, ' w/enrollID - ' + enrollID);
+	logger.log('[hyperledger-fabric-js] Registering ', ibc.chaincode.details.peers[index].name, ' w/enrollID - ' + enrollID);
 	var options = {
 		path: '/registrar',
 		host: ibc.chaincode.details.peers[index].api_host,
@@ -646,14 +646,14 @@ function register(index, enrollID, enrollSecret, maxRetry, attempt, cb){
 				};
 
 	options.success = function(statusCode, data){
-		logger.log('[ibc-js] Registration success x' + attempt + ' :', enrollID);
+		logger.log('[hyperledger-fabric-js] Registration success x' + attempt + ' :', enrollID);
 		ibc.chaincode.details.peers[index].enrollID = enrollID;							//remember a valid enrollID for this peer
 		if(cb) cb(null, data);
 	};
 	options.failure = function(statusCode, e){
-		logger.error('[ibc-js] Register - failure x' + attempt + ' :', enrollID, statusCode);
+		logger.error('[hyperledger-fabric-js] Register - failure x' + attempt + ' :', enrollID, statusCode);
 		if(attempt <= maxRetry){														//lets try again after a short delay, maybe the peer is still starting
-			logger.log('[ibc-js] \tgoing to try to register again in 30 secs');
+			logger.log('[hyperledger-fabric-js] \tgoing to try to register again in 30 secs');
 			setTimeout(function(){register(index, enrollID, enrollSecret, maxRetry, ++attempt, cb);}, 30000);
 		}
 		else{
@@ -667,7 +667,7 @@ function register(index, enrollID, enrollSecret, maxRetry, attempt, cb){
 // EXTERNAL - unregister() - unregister a enrollId from a peer (only for a blockchain network with membership), enrollID can no longer make transactions
 //============================================================================================================================
 ibc.prototype.unregister = function(index, enrollID, cb) {
-	logger.log('[ibc-js] Unregistering ', ibc.chaincode.details.peers[index].name, ' w/enrollID - ' + enrollID);
+	logger.log('[hyperledger-fabric-js] Unregistering ', ibc.chaincode.details.peers[index].name, ' w/enrollID - ' + enrollID);
 	var options = {
 		path: '/registrar/' + enrollID,
 		host: ibc.chaincode.details.peers[index].api_host,
@@ -676,12 +676,12 @@ ibc.prototype.unregister = function(index, enrollID, cb) {
 	};
 
 	options.success = function(statusCode, data){
-		logger.log('[ibc-js] Unregistering success:', enrollID);
+		logger.log('[hyperledger-fabric-js] Unregistering success:', enrollID);
 		ibc.chaincode.details.peers[index].enrollID = null;								//unremember a valid enrollID for this peer
 		if(cb) cb(null, data);
 	};
 	options.failure = function(statusCode, e){
-		logger.log('[ibc-js] Unregistering - failure:', enrollID, statusCode);
+		logger.log('[hyperledger-fabric-js] Unregistering - failure:', enrollID, statusCode);
 		if(cb) cb(helper.eFmt('unregister() error', statusCode, e), null);
 	};
 	rest.delete(options, '');
@@ -691,7 +691,7 @@ ibc.prototype.unregister = function(index, enrollID, cb) {
 // EXTERNAL - check_register() - check if a enrollID is registered or not with a peer
 //============================================================================================================================
 ibc.prototype.check_register = function(index, enrollID, cb) {
-	logger.log('[ibc-js] Checking ', ibc.chaincode.details.peers[index].name, ' w/enrollID - ' + enrollID);
+	logger.log('[hyperledger-fabric-js] Checking ', ibc.chaincode.details.peers[index].name, ' w/enrollID - ' + enrollID);
 	var options = {
 		path: '/registrar/' + enrollID,
 		host: ibc.chaincode.details.peers[index].api_host,
@@ -700,11 +700,11 @@ ibc.prototype.check_register = function(index, enrollID, cb) {
 	};
 
 	options.success = function(statusCode, data){
-		logger.log('[ibc-js] Check Register success:', enrollID);
+		logger.log('[hyperledger-fabric-js] Check Register success:', enrollID);
 		if(cb) cb(null, data);
 	};
 	options.failure = function(statusCode, e){
-		logger.error('[ibc-js] Check Register - failure:', enrollID, statusCode);
+		logger.error('[hyperledger-fabric-js] Check Register - failure:', enrollID, statusCode);
 		if(cb) cb(helper.eFmt('check_register() error', statusCode, e), null);
 	};
 	rest.get(options, '');
@@ -718,12 +718,10 @@ function deploy(func, args, deploy_options, enrollId, cb){
 		cb = enrollId;
 		enrollId = ibc.chaincode.details.peers[ibc.selectedPeer].enrollID;
 	}
-	if(enrollId == null) {														//if enrollId not provided, use known valid one
-		enrollId = ibc.chaincode.details.peers[ibc.selectedPeer].enrollID;
-	}
 
-	logger.log('[ibc-js] Deploy Chaincode - Starting');
-	logger.log('[ibc-js] \tfunction:', func, ', arg:', args);
+
+	logger.log('[hyperledger-fabric-js] Deploy Chaincode - Starting');
+	logger.log('[hyperledger-fabric-js] \tfunction:', func, ', arg:', args);
 	logger.log('\n\n\t Waiting...');											//this can take awhile
 	
 	var options = {}, body = {};
@@ -785,7 +783,7 @@ function deploy(func, args, deploy_options, enrollId, cb){
 				logger.log('\t', ibc.chaincode.details.deployed_name, '\n');
 				
 				setTimeout(function(){
-					logger.log('[ibc-js] Deploy Chaincode - Complete');
+					logger.log('[hyperledger-fabric-js] Deploy Chaincode - Complete');
 					cb(null, data);
 				}, wait_ms);														//wait extra long, not always ready yet
 			}
@@ -794,7 +792,7 @@ function deploy(func, args, deploy_options, enrollId, cb){
 	
 	// ---- Failure ---- ///
 	options.failure = function(statusCode, e){
-		logger.error('[ibc-js] deploy - failure:', statusCode);
+		logger.error('[hyperledger-fabric-js] deploy - failure:', statusCode);
 		if(cb) cb(helper.eFmt('deploy() error', statusCode, e), null);
 	};
 	rest.post(options, '', body);
@@ -807,7 +805,7 @@ var slow_mode = 10000;
 var fast_mode = 500;
 function heart_beat(){
 	if(ibc.lastPoll + slow_mode < Date.now()){									//slow mode poll
-		//logger.log('[ibc-js] Its been awhile, time to poll');
+		//logger.log('[hyperledger-fabric-js] Its been awhile, time to poll');
 		ibc.lastPoll = Date.now();
 		ibc.prototype.chain_stats(cb_got_stats);
 	}
@@ -815,12 +813,12 @@ function heart_beat(){
 		for(var i in ibc.q){
 			var elasped = Date.now() - ibc.q[i];
 			if(elasped <= 3000){												//fresh unresolved action, fast mode!
-				logger.log('[ibc-js] Unresolved action, must poll');
+				logger.log('[hyperledger-fabric-js] Unresolved action, must poll');
 				ibc.lastPoll = Date.now();
 				ibc.prototype.chain_stats(cb_got_stats);
 			}
 			else{
-				//logger.log('[ibc-js] Expired, removing');
+				//logger.log('[hyperledger-fabric-js] Expired, removing');
 				ibc.q.pop();													//expired action, remove it
 			}
 		}
@@ -831,7 +829,7 @@ function cb_got_stats(e, stats){
 	if(e == null){
 		if(stats && stats.height){
 			if(ibc.lastBlock != stats.height) {									//this is a new block!
-				logger.log('[ibc-js] New block!', stats.height);
+				logger.log('[hyperledger-fabric-js] New block!', stats.height);
 				ibc.lastBlock  = stats.height;
 				ibc.q.pop();													//action is resolved, remove
 				if(ibc.monitorFunction) ibc.monitorFunction(stats);				//call the user's callback
@@ -857,11 +855,11 @@ ibc.prototype.get_transaction = function(udid, cb) {
 	};
 
 	options.success = function(statusCode, data){
-		logger.log('[ibc-js] Get Transaction - success:', data);
+		logger.log('[hyperledger-fabric-js] Get Transaction - success:', data);
 		if(cb) cb(null, data);
 	};
 	options.failure = function(statusCode, e){
-		logger.error('[ibc-js] Get Transaction - failure:', statusCode);
+		logger.error('[hyperledger-fabric-js] Get Transaction - failure:', statusCode);
 		if(cb) cb(helper.eFmt('read() error', statusCode, e), null);
 	};
 	rest.get(options, '');
@@ -874,10 +872,10 @@ ibc.prototype.get_transaction = function(udid, cb) {
 //==================================================================
 function build_invoke_func(name){
 	if(ibc.chaincode.invoke[name] != null){											//skip if already exists
-		//logger.log('[ibc-js] \t skip, func', name, 'already exists');
+		//logger.log('[hyperledger-fabric-js] \t skip, func', name, 'already exists');
 	}
 	else {
-		logger.log('[ibc-js] Found cc invoke function: ', name);
+		logger.log('[hyperledger-fabric-js] Found cc invoke function: ', name);
 		ibc.chaincode.details.func.invoke.push(name);
 		ibc.chaincode.invoke[name] = function(args, enrollId, cb){					//create the function in the chaincode obj
 			if(typeof enrollId === 'function'){ 									//if cb is in 2nd param use known enrollId
@@ -926,12 +924,12 @@ function build_invoke_func(name){
 			}
 			
 			options.success = function(statusCode, data){
-				logger.log('[ibc-js]', name, ' - success:', data);
+				logger.log('[hyperledger-fabric-js]', name, ' - success:', data);
 				ibc.q.push(Date.now());												//new action, add it to queue
 				if(cb) cb(null, data);
 			};
 			options.failure = function(statusCode, e){
-				logger.error('[ibc-js]', name, ' - failure:', statusCode, e);
+				logger.error('[hyperledger-fabric-js]', name, ' - failure:', statusCode, e);
 				if(cb) cb(helper.eFmt('invoke() error', statusCode, e), null);
 			};
 			rest.post(options, '', body);
@@ -944,19 +942,19 @@ function build_invoke_func(name){
 //==================================================================
 function build_query_func(name){
 	if(ibc.chaincode.query[name] != null && name !== 'read'){						//skip if already exists
-		//logger.log('[ibc-js] \t skip, func', name, 'already exists');
+		//logger.log('[hyperledger-fabric-js] \t skip, func', name, 'already exists');
 	}
 	else {
-		logger.log('[ibc-js] Found cc query function: ', name);
+		logger.log('[hyperledger-fabric-js] Found cc query function: ', name);
 		ibc.chaincode.details.func.query.push(name);
 		ibc.chaincode.query[name] = function(args, enrollId, cb){					//create the function in the chaincode obj
 			if(typeof enrollId === 'function'){ 									//if cb is in 2nd param use known enrollId
 				cb = enrollId;
 				enrollId = ibc.chaincode.details.peers[ibc.selectedPeer].enrollID;
 			}
-			if(enrollId == null) {													//if enrollId not provided, use known valid one
+/*			if(enrollId == null) {													//if enrollId not provided, use known valid one
 				enrollId = ibc.chaincode.details.peers[ibc.selectedPeer].enrollID;
-			}
+			} */
 			
 			var options = {}, body = {};
 
@@ -997,7 +995,7 @@ function build_query_func(name){
 			}
 			
 			options.success = function(statusCode, data){
-				logger.log('[ibc-js]', name, ' - success:', data);
+				logger.log('[hyperledger-fabric-js]', name, ' - success:', data);
 				if(cb){
 					if(data){
 						if(data.result) cb(null, data.result.message);
@@ -1007,7 +1005,7 @@ function build_query_func(name){
 				}
 			};
 			options.failure = function(statusCode, e){
-				logger.error('[ibc-js]', name, ' - failure:', statusCode, e);
+				logger.error('[hyperledger-fabric-js]', name, ' - failure:', statusCode, e);
 				if(cb) cb(helper.eFmt('query() error', statusCode, e), null);
 			};
 			rest.post(options, '', body);
