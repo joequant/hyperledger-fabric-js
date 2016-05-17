@@ -17,6 +17,7 @@ var rest = require(__dirname + '/lib/rest.js');
 var helper = require(__dirname + '/lib/helper.js');
 var AdmZip = require('adm-zip');
 var logger = {log: console.log, error: console.error, debug: console.log, warn: console.log};
+var os = require('os');
 
 function ibc(log_outputs) {
 	if(log_outputs && log_outputs.info) logger.log = log_outputs.info;		//send normal logs here
@@ -48,7 +49,7 @@ ibc.selectedPeer = 0;
 ibc.q = [];																			//array of unix timestamps, 1 for each unsettled action
 ibc.lastPoll = 0;																	//unix timestamp of the last time we polled
 ibc.lastBlock = 0;																	//last blockheight found
-var tempDirectory = path.join(__dirname, './temp');									//	=./temp - temp directory name
+var tempDirectory = path.join(os.tmpdir(), './hyperledger-fabric-js');									//	=./temp - temp directory name
 
 
 // ============================================================================================================================
