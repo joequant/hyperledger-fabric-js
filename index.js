@@ -539,7 +539,10 @@ ibc.prototype.save =  function(dir, cb){
 	}
 	else{
 		var fn = 'chaincode.json';														//default name
-		if(ibc.chaincode.details.deployed_name) fn = ibc.chaincode.details.deployed_name + '.json';
+	        if(ibc.chaincode.details.deployed_name) fn = ibc.chaincode.details.deployed_name + '.json';
+	        try{fs.mkdirSync(dir);}
+		catch(e){ }
+
 		var dest = path.join(dir, fn);
 		fs.writeFile(dest, JSON.stringify({details: ibc.chaincode.details}), function(e){
 			if(e != null){
