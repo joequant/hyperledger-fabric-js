@@ -1,8 +1,10 @@
 *Are you looking for the Marbles app demo?  That’s not here, head to the [marbles example](https://github.com/IBM-Blockchain/marbles)* 
 
 # ibm-blockchain-js
-This is a Node.js library for easier interaction IBM Blockchain chaincode. 
-All documentation is on this page.
+This is a Node.js library for REST based interaction with [Hyperledger](https://github.com/hyperledger/fabric) [chaincode](https://github.com/hyperledger/fabric/blob/master/docs/FAQ/chaincode_FAQ.md/). 
+All `ibm-blockchain-js` documentation is on this page.
+
+*7/22 Update! there is a new gRPC based SDK called [HFC](https://github.com/hyperledger/fabric/tree/master/sdk/node). I will continue to maintain this SDK for as long as REST exists.*
 
 Table Of Contents:
 
@@ -55,12 +57,12 @@ npm install ibm-blockchain-js
 		network:{
 			peers:   [{
 				"api_host": "xxx.xxx.xxx.xxx",
-				"api_port": "xxxxx",
-				"api_port_tls": "xxx",
+				"api_port": xxx,
+				"api_port_tls": xxx,
 				"id": "xxxxxx-xxxx-xxx-xxx-xxxxxxxxxxxx_vpx"
 			}],
 			users:  [{
-				"enrollID": "user1",
+				"enrollId": "user1",
 				"enrollSecret": "xxxxxxxx"
 			}],
 			options: {							//this is optional
@@ -180,13 +182,17 @@ Take a look at how this function works, especially how it uses the register() fu
 If this is not applicable for your network (ie you have a custom IBM Blockchain network) you can easily create your own version of `ibc.load()` for your needs. 
 It will run in order:
 
-1. ibc.network(options.network.peers, options.network.options) *check out other options in ibc.network()*
+1. ibc.network(options.network.peers, options.network.options) *check out other options in [ibc.network()](#ibcnetwork)*
 1. ibc.register(...) 
-	- It will register the first peer with the first enrollID, the 2nd peer against the 2nd enrollID and so on.
+	- It will register the first peer with the first enrollId, the 2nd peer against the 2nd enrollId and so on.
 	- This function only runs if valid users are found in options.network.users. A valid user is one that contains 'type_1'.
 	- Any errors in register will stop execution and run callback(err).
 1. ibc.load_chaincode(options.chaincode, [callback]) 
 1. callback(err, cc) 
+
+Options: 
+- **maxRetry** = integer - number of times to retry `ibc.register()` before giving up
+- [more] - same options as the function [ibc.network()](#ibcnetwork), click for details 
 
 Ex:
 
@@ -195,24 +201,25 @@ Ex:
 		network:{
 			peers:   [{
 				"api_host": "xxx.xxx.xxx.xxx",
-				"api_port": "xxxxx",
-				"api_port_tls": "xxx",
+				"api_port": xxx,
+				"api_port_tls": xxx,
 				"id": "xxxxxx-xxxx-xxx-xxx-xxxxxxxxxxxx_vpx"
 			}],
 			users:  [{
-				"enrollID": "user1",
+				"enrollId": "user1",
 				"enrollSecret": "xxxxxxxx"
 			}],
 			options: {            //this is optional, gets passed to ibc.network(peers, options);
 				quiet: true, 
 				timeout: 60000,
-				tls: false
+				tls: true,
+				maxRetry: 3
 			}
 		},
 		chaincode:{
 			zip_url: 'https://github.com/ibm-blockchain/marbles-chaincode/archive/master.zip', //http/https of a link to download zip
-			unzip_dir: 'marbles-chaincode-master/part2_v1.0.0',                                        //name/path to folder that contains the chaincode you want to deploy (path relative to unzipped root)
-			git_url: 'https://github.com/ibm-blockchain/marbles-chaincode/part2_v1.0.0',             //git https URL. should point to the desired chaincode repo AND directory
+			unzip_dir: 'marbles-chaincode-master/part2_v1.0.0',                                //name/path to folder that contains the chaincode you want to deploy (path relative to unzipped root)
+			git_url: 'https://github.com/ibm-blockchain/marbles-chaincode/part2_v1.0.0',       //git https URL. should point to the desired chaincode repo AND directory
 			
 			deployed_name: null    //[optional] this is the hashed name of a deployed chaincode.  if you want to run with chaincode that is already deployed set it now, else it will be set when you deploy with the sdk
 		}
@@ -243,27 +250,36 @@ Ex:
 	ibc.load_chaincode(options, cb_ready);
 ```
 
-### ibc.network(arrayPeers, [options])
+### <a name="ibcnetwork"></a>ibc.network(arrayPeers, [options])
 Set the information about the peers in the network.
 This should be an array of peer objects. 
-The optional options parameter should be an object with the field `quiet` and/or `timeout`.
-- quiet = boolean - when true will print out only minimal HTTP debug information. Defaults `true`.
-- timeout = integer - time in ms to wait for a http response. Defaults `60000`.
-- tls = boolean - when `false` will use HTTP instead of HTTPS. Defaults `true`.
+The options parameter is optional.
+Each field in `options` is also optional.
+
+Options: 
+- **quiet** = boolean - when true will print out only minimal HTTP debug information. Defaults `true`.
+- **timeout** = integer - time in ms to wait for a http response. Defaults `60000`.
+- **tls** = boolean - when `false` will use HTTP instead of HTTPS. Defaults `true`.
 
 Ex:
 
 ```js
 	var peers = [
 		{
-			"api_host": "xxx.xxx.xxx.xxx",
-			"api_port": "xxxxx",
-			"api_port_tls": "xxx",
-			"id": "xxxxxx-xxxx-xxx-xxx-xxxxxxxxxxxx_vpx"
+			"api_host": "xxx.xxx.xxx.xxx",               //ip or hostname of api for this peer
+			"api_port": xxx,                             //port for api, non tls (integer)
+			"api_port_tls": xxx,                         //port for api with tls. (integer)
+			"id": "xxxxxx-xxxx-xxx-xxx-xxxxxxxxxxxx_vpx" //unique id of peer (string)
 		}
 	]
-	ibc.network(peers, {quiet: false, timeout: 120000});
+	ibc.network(peers, {quiet: false, timeout: 120000}); //can pass config options
 ```
+
+Note **only** the field names you see above  (`api_host`, `api_port`, `api_port_tls`, `id`) are required.
+If you are using a Bluemix network you will see lots of other fields in the credentials JSON blob, but they are not needed. 
+Its also fine to include the extra fields.
+You can ommit the field `api_port_tls` if your network does not support tls. 
+Make sure the `options.tls` is `false`.
 
 ### ibc.save(path [callback])
 Save the [Chaincode Summary File](#ccsf) to a path.
@@ -351,14 +367,14 @@ Ex:
 	ibc.switchPeer(2);
 ```
 	
-### ibc.register(peerIndex, enrollID, enrollsecret, maxRetry, [callback])
+### ibc.register(peerIndex, enrollId, enrollsecret, maxRetry, [callback])
 Only applicable on a network with security enabled. 
 `register()` will register against peer[peerIndex] with the provided credentials.
-If successful, the peer will now use this `enrollID` to perform any http requests.
-- peerIndex = integer - position of peer in peers array (the one you fed ibc.networks()) you want to register against.
-- enrollID = string - name of secure context user.
-- enrollSecret = string - password/secret/api key of secure context user.
-- maxRetry = integer - number of times to retry this call before giving up.
+If successful, the peer will now use this `enrollId` to perform any http requests.
+- **peerIndex** = integer - position of peer in peers array (the one you fed ibc.networks()) you want to register against.
+- **enrollId** = string - name of secure context user.
+- **enrollSecret** = string - password/secret/api key of secure context user.
+- **maxRetry** = integer - number of times to retry this call before giving up.
 
 Ex:
 
@@ -398,16 +414,16 @@ Ex:
 - Chaincode functions are dependent on actually be found inside your Go chaincode
 - My advice is to build your chaincode off of the Marble Application one.  This way you get the basic CRUD functions below:
 
-### chaincode.deploy(func, args, [options], [enrollID], [callback])
+### chaincode.deploy(func, args, [options], [enrollId], [callback])
 Deploy the chaincode. 
 Call GoLang function named 'func' and feed it 'args'.
 Usually "args" is an array of strings.
-The `enrollID` parameter should be the desired secure context enrollID that has already been registered against the selected peer. 
-If left `null` the SDK will use a known enrollID for the selected peer. (this is only relevant in a permissioned network)
+The `enrollId` parameter should be the desired secure context enrollId that has already been registered against the selected peer. 
+If left `null` the SDK will use a known enrollId for the selected peer. (this is only relevant in a permissioned network)
 
 Options: 
-- save_path = save the [Chaincode Summary File](#ccsf) to 'save_path'. 
-- delay_ms = time in milliseconds to postpone the callback after deploy. Default is `40000`
+- **save_path** = save the [Chaincode Summary File](#ccsf) to 'save_path'. 
+- **delay_ms** = time in milliseconds to postpone the callback after deploy. Default is `40000`
 
 Ex:
 
@@ -415,11 +431,11 @@ Ex:
 	chaincode.deploy('init', ['99'], {delay_ms: 60000}, cb_deployed);
 ```
 
-### chaincode.query.CUSTOM_FUNCTION_NAME(args, [enrollID], [callback])
+### chaincode.query.CUSTOM_FUNCTION_NAME(args, [enrollId], [callback])
 Will invoke your Go function CUSTOM_FUNCTION_NAME and pass it `args`. 
 Usually `args` is an array of strings.
-The `enrollID` parameter should be the desired secure context enrollID that has already been registered against the selected peer. 
-If left `null` the SDK will use a known enrollID for the selected peer. (this is only relevant in a permissioned network)
+The `enrollId` parameter should be the desired secure context enrollId that has already been registered against the selected peer. 
+If left `null` the SDK will use a known enrollId for the selected peer. (this is only relevant in a permissioned network)
 
 Ex:
 
@@ -429,11 +445,11 @@ Ex:
 	});
 ```
 
-### chaincode.invoke.CUSTOM_FUNCTION_NAME(args, [enrollID], [callback])
+### chaincode.invoke.CUSTOM_FUNCTION_NAME(args, [enrollId], [callback])
 Will query your Go function CUSTOM_FUNCTION_NAME and pass it `args`. 
 Usually `args` is an array of strings.
-The `enrollID` parameter should be the desired secure context enrollID that has already been registered against the selected peer. 
-If left `null` the SDK will use a known enrollID for the selected peer. (this is only relevant in a permissioned network)
+The `enrollId` parameter should be the desired secure context enrollId that has already been registered against the selected peer. 
+If left `null` the SDK will use a known enrollId for the selected peer. (this is only relevant in a permissioned network)
 
 Ex:
 
@@ -443,7 +459,7 @@ Ex:
 	});
 ```
 
-### chaincode.query.read(name, [enrollID], [callback]) *depreciated 4/1/2016*
+### chaincode.query.read(name, [enrollId], [callback]) *depreciated 4/1/2016*
 *This function is only here to help people transition from ibc v0.0.x to v1.x.x.*
 *You should create your own read() function in your chaincode which will overwrite this prebuilt one.*
 *This function will put the `name` argument into `args[0]` and set `function` to `query`.*
@@ -451,8 +467,8 @@ Ex:
 
 Read variable named name from chaincode state. 
 This will call the `Query()` function in the Go chaincode. 
-The `enrollID` parameter should be the desired secure context enrollID that has already been registered against the selected peer. 
-If left `null` the SDK will use a known enrollID for the selected peer. (this is only relevant in a permissioned network)
+The `enrollId` parameter should be the desired secure context enrollId that has already been registered against the selected peer. 
+If left `null` the SDK will use a known enrollId for the selected peer. (this is only relevant in a permissioned network)
 
 ***
 ***
@@ -496,14 +512,14 @@ It is returned in the callback to load_chaincode() and contains all your cc func
 
 ```js
 	{
-		name: "input error",
-		code: 400,
-		details: {msg: "did not provide git_url"}
+		name: "input error",                       //short name of error
+		code: 400,                                 //http error status code, integer
+		details: {msg: "did not provide git_url"}  //description of error, obj of unknown makeup
 	};
 ```
 	
 ### <a name="ccsf"></a>Chaincode Summary File
-This file is used internally. 
+This file is used internally when debugging. 
 It is created in ibc.load_chaincode() and updated with chaincode.deploy(). 
 A copy can be saved elsewhere with ibc.save(path). 
 I found it handy in niche cases, but it will probably be unhelpful to most developers. 
@@ -522,10 +538,10 @@ I found it handy in niche cases, but it will probably be unhelpful to most devel
 		"peers": [{
 			"name": "vp1-xxx.xxx.xxx.xxx",
 			"api_host": "xxx.xxx.xxx.xxx",
-			"api_port": "xxx",
+			"api_port": xxx,
 			"id": "xxxxx_vp1",
 			"tls": false,
-			"enrollID": "user1"
+			"enrollId": "user1"
 		}],
 		"timestamp": 1459779181971,
 		"users": [{
@@ -543,8 +559,8 @@ I found it handy in niche cases, but it will probably be unhelpful to most devel
 
 *ibc.load() appears to ignore all of my users for secure context. Then it complains it found "No membership users" and never registers with a Peer!*
 
-- Correct behavior of `ibc.load()` is to remove any enrollIDs that do not contain 'type_1' in their name. 
-This is to conform to the OBC Peer spec of what enrollIDs a dev's app should use. 
+- Correct behavior of `ibc.load()` is to remove any enrollIds that do not contain 'type_1' in their name. 
+This is to conform to the OBC Peer spec of what enrollIds a dev's app should use. 
 If this is not applicable for your network (ie you have a custom IBM Blockchain network) you can easily create your own version of `ibc.load()` for your needs. 
 I would copy the code found in `ibc.load()` then modify it to fit your own needs. 
 Everything important that `ibc.load()` calls is exposed in this module. 

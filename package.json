@@ -1,6 +1,6 @@
 {
   "name": "hyperledger-fabric-js",
-  "version": "1.2.4",
+  "version": "1.2.6",
   "description": "A library for easily interacting with Hyperledger fabric.",
   "main": "index.js",
   "scripts": {
